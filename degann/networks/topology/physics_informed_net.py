@@ -25,6 +25,7 @@ class PhysicsInformedNet(keras.Model):
         is_debug: bool = False,
         **kwargs,
     ):
+        self._name = "PINN"
         decorator_params: List[Optional[Dict]] = [None]
         if "decorator_params" in kwargs.keys():
             decorator_params = kwargs.get("decorator_params")
@@ -150,43 +151,6 @@ class PhysicsInformedNet(keras.Model):
         """
         if metric_funcs is None:
             metric_funcs = []
-        opt = optimizers.get_optimizer(optimizer)(learning_rate=rate)
-        loss = losses.get_loss(loss_func)
-        m = [metrics.get_metric(metric) for metric in metric_funcs]
-        self.compile(
-            optimizer=opt,
-            loss=loss,
-            metrics=m,
-            run_eagerly=run_eagerly,
-        )
-
-    def custom_compile(
-        self,
-        rate=1e-2,
-        optimizer="SGD",
-        loss_func="MeanSquaredError",
-        metric_funcs=None,
-        run_eagerly=False,
-    ):
-        """
-        Configures the model for training
-
-        Parameters
-        ----------
-        rate: float
-            learning rate for optimizer
-        optimizer: str
-            name of optimizer
-        loss_func: str
-            name of loss function
-        metric_funcs: list[str]
-            list with metric function names
-        run_eagerly: bool
-
-        Returns
-        -------
-
-        """
         opt = optimizers.get_optimizer(optimizer)(learning_rate=rate)
         loss = losses.get_loss(loss_func)
         m = [metrics.get_metric(metric) for metric in metric_funcs]
