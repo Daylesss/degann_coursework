@@ -214,6 +214,60 @@ class PhysicsInformedNet(keras.Model):
             x = layer(x, **kwargs)
         return self.out_layer(x, **kwargs)
 
+    def train_step(self, data):
+        """
+        Custom train step with physics and
+        boundary losses implementation
+
+        Parameters
+        ----------
+        data: tuple
+            Pair of x and y (or dataset)
+        Returns
+        -------
+
+        """
+        # Unpack the data. Its structure depends on your model and
+        # on what you pass to `fit()`.
+        x, y = data
+        with tf.GradientTape(persistent=True) as tape:
+            tape.watch(x)
+            y_pred = self(x, training=True)  # Forward pass
+            # Compute the loss value
+            # (the loss function is configured in `compile()`)
+            loss = self.compute_loss(y=y, y_pred=y_pred)
+
+            phys_deviation = self.phys_func(self, tape, x, y_pred)
+            phys_loss = self.compiled_loss(
+                tf.zeros_like(phys_deviation), phys_deviation
+            )
+
+            boundary_loss = 0
+            if self.boundary_func is not None:
+                boundary_deviation = self.boundary_func(self, tape, x, y_pred)
+                boundary_loss = self.compiled_loss(
+                    tf.zeros_like(boundary_deviation), boundary_deviation
+                )
+
+            total_loss = (
+                loss + self.phys_k * phys_loss + self.boundary_k * boundary_loss
+            )
+
+        # Compute gradients
+        trainable_vars = self.trainable_variables
+        gradients = tape.gradient(total_loss, trainable_vars)
+        # Update weights
+        self.optimizer.apply_gradients(zip(gradients, trainable_vars))
+        del tape
+        # Update metrics (includes the metric that tracks the loss)
+        for metric in self.metrics:
+            if metric.name == "loss":
+                metric.update_state(total_loss)
+            else:
+                metric.update_state(y, y_pred)
+        # Return a dict mapping metric names to current value
+        return {m.name: m.result() for m in self.metrics}
+
     def set_name(self, new_name):
         self._name = new_name
 
