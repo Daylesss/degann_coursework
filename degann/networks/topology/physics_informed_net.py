@@ -5,7 +5,7 @@ import tensorflow as tf
 # from tensorflow import keras
 import keras
 
-from degann.networks import layer_creator
+from degann.networks import layer_creator, losses, metrics, optimizers
 
 
 class PhysicsInformedNet(keras.Model):
@@ -99,7 +99,6 @@ class PhysicsInformedNet(keras.Model):
         )
 
         self.activation_funcs = activation_func
-        self.layer = layer
         self.weight_initializer = weight
         self.bias_initializer = biases
         self.input_size = input_size
@@ -110,3 +109,209 @@ class PhysicsInformedNet(keras.Model):
         self.phys_k = phys_k
         self.boundary_func = boundary_func
         self.boundary_k = boundary_k
+
+    @property
+    def get_activations(self) -> List:
+        """
+        Get list of activations functions for each layer
+
+        Returns
+        -------
+        activation: list
+        """
+        return [layer.get_activation for layer in self.blocks]
+
+    def custom_compile(
+        self,
+        rate=1e-2,
+        optimizer="SGD",
+        loss_func="MeanSquaredError",
+        metric_funcs=None,
+        run_eagerly=False,
+    ):
+        """
+        Configures the model for training
+
+        Parameters
+        ----------
+        rate: float
+            learning rate for optimizer
+        optimizer: str
+            name of optimizer
+        loss_func: str
+            name of loss function
+        metric_funcs: list[str]
+            list with metric function names
+        run_eagerly: bool
+
+        Returns
+        -------
+
+        """
+        if metric_funcs is None:
+            metric_funcs = []
+        opt = optimizers.get_optimizer(optimizer)(learning_rate=rate)
+        loss = losses.get_loss(loss_func)
+        m = [metrics.get_metric(metric) for metric in metric_funcs]
+        self.compile(
+            optimizer=opt,
+            loss=loss,
+            metrics=m,
+            run_eagerly=run_eagerly,
+        )
+
+    def custom_compile(
+        self,
+        rate=1e-2,
+        optimizer="SGD",
+        loss_func="MeanSquaredError",
+        metric_funcs=None,
+        run_eagerly=False,
+    ):
+        """
+        Configures the model for training
+
+        Parameters
+        ----------
+        rate: float
+            learning rate for optimizer
+        optimizer: str
+            name of optimizer
+        loss_func: str
+            name of loss function
+        metric_funcs: list[str]
+            list with metric function names
+        run_eagerly: bool
+
+        Returns
+        -------
+
+        """
+        opt = optimizers.get_optimizer(optimizer)(learning_rate=rate)
+        loss = losses.get_loss(loss_func)
+        m = [metrics.get_metric(metric) for metric in metric_funcs]
+        self.compile(
+            optimizer=opt,
+            loss=loss,
+            metrics=m,
+            run_eagerly=run_eagerly,
+        )
+
+    def call(self, inputs, **kwargs):
+        """
+        Obtaining a neural network response on the input data vector
+        Parameters
+        ----------
+        inputs
+        kwargs
+
+        Returns
+        -------
+
+        """
+        x = inputs
+        for layer in self.blocks:
+            x = layer(x, **kwargs)
+        return self.out_layer(x, **kwargs)
+
+    def set_name(self, new_name):
+        self._name = new_name
+
+    def __str__(self):
+        res = f"IModel {self.name}\n"
+        for layer in self.blocks:
+            res += str(layer)
+        res += str(self.out_layer)
+        return res
+
+    def to_dict(self, **kwargs):
+        """
+        Export neural network to dictionary
+
+        Parameters
+        ----------
+        kwargs
+
+        Returns
+        -------
+
+        """
+        res = {
+            "net_type": "MyPINN",
+            "name": self._name,
+            "input_size": self.input_size,
+            "block_size": self.block_size,
+            "output_size": self.output_size,
+            "layer": [],
+            "out_layer": self.out_layer.to_dict(),
+        }
+
+        for i, layer in enumerate(self.blocks):
+            res["layer"].append(layer.to_dict())
+
+        return res
+
+    @classmethod
+    def from_layers(
+        cls,
+        input_size: int,
+        block_size: List[int],
+        output_size: int,
+        layers: List[keras.layers.Layer],
+        **kwargs,
+    ):
+        """
+        Restore neural network from list of layers
+        Parameters
+        ----------
+        input_size
+        block_size
+        output_size
+        layers
+        kwargs
+
+        Returns
+        -------
+
+        """
+        res = cls(
+            input_size=input_size,
+            block_size=block_size,
+            output_size=output_size,
+            **kwargs,
+        )
+
+        for layer_num in range(len(res.blocks)):
+            res.blocks[layer_num] = layers[layer_num]
+
+        return res
+
+    def from_dict(self, config, **kwargs):
+        """
+        Restore neural network from dictionary of params
+        Parameters
+        ----------
+        config
+        kwargs
+
+        Returns
+        -------
+
+        """
+        input_size = config["input_size"]
+        block_size = config["block_size"]
+        output_size = config["output_size"]
+
+        self.block_size = list(block_size)
+        self.input_size = input_size
+        self.output_size = output_size
+
+        layers: List[keras.layers.Layer] = []
+        for layer_config in config["layer"]:
+            layers.append(layer_creator.from_dict(layer_config))
+
+        self.blocks: List[keras.layers.Layer] = []
+        for layer_num in range(len(layers)):
+            self.blocks.append(layers[layer_num])
+
+        self.out_layer = layer_creator.from_dict(config["out_layer"])
