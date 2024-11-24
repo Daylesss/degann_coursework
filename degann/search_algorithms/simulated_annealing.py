@@ -132,7 +132,7 @@ def simulated_annealing(
     callbacks: list = None,
     file_name: str = "",
     logging: bool = False,
-    **kwargs
+    **kwargs,
 ) -> Tuple[float, int, str, str, dict, int]:
     """
     Method of simulated annealing in the parameter space of neural networks

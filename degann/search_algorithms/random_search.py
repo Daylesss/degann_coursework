@@ -28,7 +28,7 @@ def random_search(
     update_gen_cycle: int = 0,
     logging: bool = False,
     file_name: str = "",
-    **kwargs
+    **kwargs,
 ) -> Tuple[float, int, str, str, dict]:
     """
     Algorithm for random search in the space of parameters of neural networks

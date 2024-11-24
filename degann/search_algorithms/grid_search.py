@@ -24,7 +24,7 @@ def grid_search_step(
     logging: bool = False,
     file_name: str = "",
     callbacks: list = None,
-    **kwargs
+    **kwargs,
 ):
     """
     This function is a step of the exhaustive search algorithm.
@@ -131,7 +131,7 @@ def grid_search(
     logging=False,
     file_name: str = "",
     verbose=False,
-    **kwargs
+    **kwargs,
 ) -> Tuple[float, int, str, str, dict]:
     """
     An algorithm for exhaustively enumerating a given set of parameters
@@ -219,7 +219,7 @@ def grid_search(
                             callbacks=[time_viewer],
                             logging=logging,
                             file_name=file_name,
-                            **kwargs
+                            **kwargs,
                         )
                         if best_loss > curr_loss:
                             best_net = curr_nn
