@@ -182,6 +182,7 @@ def train(
             net_type=args["net_type"],
             name=f"net{args['name_salt']}_{str_shape}",
             is_debug=args["debug"],
+            **args.get("net_kwargs", {}),
         )
         nets.append(curr_net)
     if args["use_rand_net"]:
@@ -195,6 +196,7 @@ def train(
             decorator_params=rand_net_params[2],
             net_type=args["net_type"],
             name=f"net{args['name_salt']}_{str_shape}",
+            **args.get("net_kwargs", {}),
         )
         nets.append(rand_net)
 
