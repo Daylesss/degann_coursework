@@ -132,6 +132,7 @@ def simulated_annealing(
     callbacks: list = None,
     file_name: str = "",
     logging: bool = False,
+    **kwargs
 ) -> Tuple[float, int, str, str, dict, int]:
     """
     Method of simulated annealing in the parameter space of neural networks
@@ -212,10 +213,10 @@ def simulated_annealing(
         b, a = decode(
             gen[0].value(), block_size=alphabet_block_size, offset=alphabet_offset
         )
-        curr_best = imodel.IModel(input_size, b, output_size, a + ["linear"])
+        curr_best = imodel.IModel(input_size, b, output_size, a + ["linear"], **kwargs)
         curr_best.compile(optimizer=opt, loss_func=loss)
     else:
-        curr_best = imodel.IModel(input_size, [], output_size, ["linear"])
+        curr_best = imodel.IModel(input_size, [], output_size, ["linear"], **kwargs)
         curr_best = curr_best.from_dict(start_net)
     curr_epoch = gen[1].value()
     hist = curr_best.train(
@@ -273,7 +274,7 @@ def simulated_annealing(
             block_size=alphabet_block_size,
             offset=alphabet_offset,
         )
-        neighbor = imodel.IModel(input_size, b, output_size, a + ["linear"])
+        neighbor = imodel.IModel(input_size, b, output_size, a + ["linear"], **kwargs)
         neighbor.compile(optimizer=opt, loss_func=loss)
         neighbor_hist = neighbor.train(
             data[0],

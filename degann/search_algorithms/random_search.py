@@ -28,6 +28,7 @@ def random_search(
     update_gen_cycle: int = 0,
     logging: bool = False,
     file_name: str = "",
+    **kwargs
 ) -> Tuple[float, int, str, str, dict]:
     """
     Algorithm for random search in the space of parameters of neural networks
@@ -105,7 +106,7 @@ def random_search(
         b, a = decode(
             gen[0].value(), block_size=alphabet_block_size, offset=alphabet_offset
         )
-        curr_best = imodel.IModel(input_size, b, output_size, a + ["linear"])
+        curr_best = imodel.IModel(input_size, b, output_size, a + ["linear"], **kwargs)
         curr_best.compile(optimizer=opt, loss_func=loss)
         curr_epoch = gen[1].value()
         hist = curr_best.train(

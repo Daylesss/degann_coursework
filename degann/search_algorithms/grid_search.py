@@ -24,6 +24,7 @@ def grid_search_step(
     logging: bool = False,
     file_name: str = "",
     callbacks: list = None,
+    **kwargs
 ):
     """
     This function is a step of the exhaustive search algorithm.
@@ -80,7 +81,7 @@ def grid_search_step(
         update_random_generator(i, cycle_size=update_gen_cycle)
         history = dict()
         b, a = decode(code, block_size=alphabet_block_size, offset=alphabet_offset)
-        nn = imodel.IModel(input_size, b, output_size, a + ["linear"])
+        nn = imodel.IModel(input_size, b, output_size, a + ["linear"], **kwargs)
         nn.compile(optimizer=opt, loss_func=loss)
         temp_his = nn.train(
             data[0], data[1], epochs=num_epoch, verbose=0, callbacks=callbacks
@@ -130,6 +131,7 @@ def grid_search(
     logging=False,
     file_name: str = "",
     verbose=False,
+    **kwargs
 ) -> Tuple[float, int, str, str, dict]:
     """
     An algorithm for exhaustively enumerating a given set of parameters
@@ -217,6 +219,7 @@ def grid_search(
                             callbacks=[time_viewer],
                             logging=logging,
                             file_name=file_name,
+                            **kwargs
                         )
                         if best_loss > curr_loss:
                             best_net = curr_nn
